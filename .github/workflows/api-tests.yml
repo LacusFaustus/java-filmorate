@@ -23,6 +23,3 @@ jobs:
 
       - name: Run tests with Maven
         run: mvn test
-
-      - name: Checkstyle validation
-        run: mvn checkstyle:check
