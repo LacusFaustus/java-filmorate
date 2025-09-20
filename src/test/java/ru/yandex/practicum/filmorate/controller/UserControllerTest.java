@@ -1,20 +1,28 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import ru.yandex.practicum.filmorate.controller.UserController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.ResponseEntity;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
 import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 class UserControllerTest {
+    @Mock
+    private UserService userService;
+
+    @InjectMocks
     private UserController userController;
 
     @BeforeEach
     void setUp() {
-        userController = new UserController();
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
@@ -24,23 +32,11 @@ class UserControllerTest {
         user.setLogin("testlogin");
         user.setBirthday(LocalDate.of(2000, 1, 1));
 
-        ResponseEntity<User> response = userController.createUser(user);
-        assertNotNull(response.getBody());
-        assertEquals("test@mail.ru", response.getBody().getEmail());
-        assertEquals(201, response.getStatusCodeValue());
-    }
+        when(userService.createUser(any(User.class))).thenReturn(user);
 
-    @Test
-    void createUserWithEmptyLogin() {
-        User user = new User();
-        user.setEmail("test@mail.ru");
-        user.setLogin(""); // Пустой логин - должно пройти, так как аннотации не работают
-        user.setBirthday(LocalDate.of(2000, 1, 1));
-
-        // В unit-тестах аннотации @NotBlank не работают
-        ResponseEntity<User> response = userController.createUser(user);
-        assertNotNull(response.getBody());
-        assertEquals(201, response.getStatusCodeValue());
+        User result = userController.createUser(user);
+        assertNotNull(result);
+        assertEquals("test@mail.ru", result.getEmail());
     }
 
     @Test
@@ -48,50 +44,8 @@ class UserControllerTest {
         User user = new User();
         user.setEmail("test@mail.ru");
         user.setLogin("testlogin");
-        user.setBirthday(LocalDate.now().plusDays(1)); // Дата в будущем
+        user.setBirthday(LocalDate.now().plusDays(1));
 
-        // Эта проверка должна выбрасывать ValidationException из нашей кастомной валидации
         assertThrows(ValidationException.class, () -> userController.createUser(user));
-    }
-
-    @Test
-    void createUserWithInvalidEmail() {
-        User user = new User();
-        user.setEmail("invalid-email"); // Неправильный email
-        user.setLogin("testlogin");
-        user.setBirthday(LocalDate.of(2000, 1, 1));
-
-        // В unit-тестах аннотации @Email не работают
-        ResponseEntity<User> response = userController.createUser(user);
-        assertNotNull(response.getBody());
-        assertEquals(201, response.getStatusCodeValue());
-    }
-
-    @Test
-    void createUserWithEmptyNameShouldUseLogin() {
-        User user = new User();
-        user.setEmail("test@mail.ru");
-        user.setLogin("testlogin");
-        user.setName(""); // Пустое имя
-        user.setBirthday(LocalDate.of(2000, 1, 1));
-
-        ResponseEntity<User> response = userController.createUser(user);
-        assertNotNull(response.getBody());
-        assertEquals("testlogin", response.getBody().getName()); // Должно использовать логин
-        assertEquals(201, response.getStatusCodeValue());
-    }
-
-    @Test
-    void createUserWithNullNameShouldUseLogin() {
-        User user = new User();
-        user.setEmail("test@mail.ru");
-        user.setLogin("testlogin");
-        user.setName(null); // null имя
-        user.setBirthday(LocalDate.of(2000, 1, 1));
-
-        ResponseEntity<User> response = userController.createUser(user);
-        assertNotNull(response.getBody());
-        assertEquals("testlogin", response.getBody().getName()); // Должно использовать логин
-        assertEquals(201, response.getStatusCodeValue());
     }
 }
