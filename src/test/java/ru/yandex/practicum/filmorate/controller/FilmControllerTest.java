@@ -5,9 +5,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 import java.time.LocalDate;
@@ -40,6 +37,7 @@ class FilmControllerTest {
         Film result = filmController.createFilm(film);
         assertNotNull(result);
         assertEquals("Test Film", result.getName());
+        verify(filmService, times(1)).createFilm(film);
     }
 
     @Test
@@ -50,6 +48,14 @@ class FilmControllerTest {
         film.setReleaseDate(LocalDate.of(1890, 1, 1));
         film.setDuration(120);
 
-        assertThrows(ValidationException.class, () -> filmController.createFilm(film));
+        // Теперь валидация происходит в сервисе, поэтому контроллер не должен бросать исключение
+        // Вместо этого сервис бросит ValidationException при вызове createFilm
+        when(filmService.createFilm(any(Film.class))).thenThrow(
+                new ru.yandex.practicum.filmorate.exception.ValidationException("Дата релиза не может быть раньше 1895-12-28")
+        );
+
+        assertThrows(ru.yandex.practicum.filmorate.exception.ValidationException.class,
+                () -> filmController.createFilm(film));
+        verify(filmService, times(1)).createFilm(film);
     }
 }
