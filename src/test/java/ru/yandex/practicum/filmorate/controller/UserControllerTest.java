@@ -5,8 +5,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
+
 import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,6 +28,11 @@ class UserControllerTest {
 
     @Test
     void createUserWithValidData() {
+        UserDto userDto = new UserDto();
+        userDto.setEmail("test@mail.ru");
+        userDto.setLogin("testlogin");
+        userDto.setBirthday(LocalDate.of(2000, 1, 1));
+
         User user = new User();
         user.setEmail("test@mail.ru");
         user.setLogin("testlogin");
@@ -33,18 +40,18 @@ class UserControllerTest {
 
         when(userService.createUser(any(User.class))).thenReturn(user);
 
-        User result = userController.createUser(user);
+        UserDto result = userController.createUser(userDto);
         assertNotNull(result);
         assertEquals("test@mail.ru", result.getEmail());
-        verify(userService, times(1)).createUser(user);
+        verify(userService, times(1)).createUser(any(User.class));
     }
 
     @Test
     void createUserWithFutureBirthday() {
-        User user = new User();
-        user.setEmail("test@mail.ru");
-        user.setLogin("testlogin");
-        user.setBirthday(LocalDate.now().plusDays(1));
+        UserDto userDto = new UserDto();
+        userDto.setEmail("test@mail.ru");
+        userDto.setLogin("testlogin");
+        userDto.setBirthday(LocalDate.now().plusDays(1));
 
         // Теперь валидация происходит в сервисе, поэтому контроллер не должен бросать исключение
         // Вместо этого сервис бросит ValidationException при вызове createUser
@@ -53,7 +60,7 @@ class UserControllerTest {
         );
 
         assertThrows(ru.yandex.practicum.filmorate.exception.ValidationException.class,
-                () -> userController.createUser(user));
-        verify(userService, times(1)).createUser(user);
+                () -> userController.createUser(userDto));
+        verify(userService, times(1)).createUser(any(User.class));
     }
 }

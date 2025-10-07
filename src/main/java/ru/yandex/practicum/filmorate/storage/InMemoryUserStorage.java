@@ -1,11 +1,11 @@
 package ru.yandex.practicum.filmorate.storage;
 
-import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.User;
+
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
-@Component
 public class InMemoryUserStorage implements UserStorage {
     private final Map<Integer, User> users = new HashMap<>();
     private final AtomicInteger nextId = new AtomicInteger(1);
@@ -17,26 +17,32 @@ public class InMemoryUserStorage implements UserStorage {
 
     @Override
     public User createUser(User user) {
-        user.setId(nextId.getAndIncrement());
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
+        // Гарантируем, что имя никогда не null и не пустое
+        String userName = user.getName();
+        if (userName == null || userName.isBlank()) {
+            userName = user.getLogin();
         }
+        user.setName(userName);
+
+        user.setId(nextId.getAndIncrement());
         users.put(user.getId(), user);
         return user;
     }
 
     @Override
     public User updateUser(User updatedUser) {
-        // Получаем существующего пользователя для сохранения его друзей
         User existingUser = users.get(updatedUser.getId());
         if (existingUser != null) {
-            // Сохраняем друзей из существующего пользователя
             updatedUser.setFriends(existingUser.getFriends());
         }
 
-        if (updatedUser.getName() == null || updatedUser.getName().isBlank()) {
-            updatedUser.setName(updatedUser.getLogin());
+        // Гарантируем, что имя никогда не null и не пустое
+        String userName = updatedUser.getName();
+        if (userName == null || userName.isBlank()) {
+            userName = updatedUser.getLogin();
         }
+        updatedUser.setName(userName);
+
         users.put(updatedUser.getId(), updatedUser);
         return updatedUser;
     }
@@ -54,5 +60,52 @@ public class InMemoryUserStorage implements UserStorage {
     @Override
     public boolean userExists(int id) {
         return users.containsKey(id);
+    }
+
+    @Override
+    public void addFriend(int userId, int friendId) {
+        User user = users.get(userId);
+        User friend = users.get(friendId);
+        if (user != null && friend != null) {
+            user.addFriend(friendId);
+        }
+    }
+
+    @Override
+    public void removeFriend(int userId, int friendId) {
+        User user = users.get(userId);
+        User friend = users.get(friendId);
+        if (user != null && friend != null) {
+            user.removeFriend(friendId);
+        }
+    }
+
+    @Override
+    public List<User> getFriends(int userId) {
+        User user = users.get(userId);
+        if (user == null) {
+            return new ArrayList<>();
+        }
+        return user.getFriends().stream()
+                .map(friendId -> users.get(friendId))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<User> getCommonFriends(int userId, int otherId) {
+        User user1 = users.get(userId);
+        User user2 = users.get(otherId);
+        if (user1 == null || user2 == null) {
+            return new ArrayList<>();
+        }
+
+        Set<Integer> commonFriendIds = new HashSet<>(user1.getFriends());
+        commonFriendIds.retainAll(user2.getFriends());
+
+        return commonFriendIds.stream()
+                .map(friendId -> users.get(friendId))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 }

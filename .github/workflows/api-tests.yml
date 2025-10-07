@@ -21,5 +21,8 @@ jobs:
       - name: Build with Maven
         run: mvn clean compile
 
-      - name: Run tests with Maven
+      - name: Run unit tests
         run: mvn test
+
+      - name: Run integration tests
+        run: mvn verify -Dspring.profiles.active=test

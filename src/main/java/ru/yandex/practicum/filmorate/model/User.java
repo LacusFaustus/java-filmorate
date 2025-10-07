@@ -20,10 +20,14 @@ public class User {
     @Pattern(regexp = "\\S+", message = "Логин не может содержать пробелы")
     private String login;
 
-    private String name;
+    private String name; // Без валидации - может быть null или пустым
     private LocalDate birthday;
 
     private Set<Integer> friends = new HashSet<>();
+
+    public User() {
+        this.friends = new HashSet<>();
+    }
 
     public void addFriend(int friendId) {
         friends.add(friendId);
@@ -37,7 +41,6 @@ public class User {
         return new HashSet<>(friends);
     }
 
-    // Добавляем сеттер для friends
     public void setFriends(Set<Integer> friends) {
         this.friends = new HashSet<>(friends);
     }
