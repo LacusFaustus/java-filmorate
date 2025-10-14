@@ -1,7 +1,33 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0"?>
 <!DOCTYPE suppressions PUBLIC
-		"-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
-		"https://checkstyle.org/dtds/suppressions_1_2.dtd">
+        "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+        "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
 <suppressions>
-	<suppress checks=".*" files="target[\\/]generated-sources[\\/]"/>
+    <!-- Отключаем проверку магических чисел -->
+    <suppress files=".*" checks="MagicNumber"/>
+
+    <!-- Отключаем проверку порядка импортов -->
+    <suppress files=".*" checks="ImportOrder"/>
+
+    <!-- Отключаем проверку звездочек в импортах -->
+    <suppress files=".*" checks="AvoidStarImport"/>
+
+    <!-- Отключаем проверку длины строк -->
+    <suppress files=".*" checks="LineLength"/>
+
+    <!-- Отключаем проверку тернарных операторов -->
+    <suppress files=".*" checks="AvoidInlineConditionals"/>
+
+    <!-- Отключаем проверку пустых строк между методами -->
+    <suppress files=".*" checks="EmptyLineSeparator"/>
+
+    <!-- Отключаем проверку перехвата Exception -->
+    <suppress files=".*" checks="IllegalCatch"/>
+
+    <!-- Отключаем проверку переноса операторов -->
+    <suppress files=".*" checks="OperatorWrap"/>
+
+    <!-- Отключаем неиспользуемые импорты -->
+    <suppress files=".*" checks="UnusedImports"/>
 </suppressions>

@@ -10,7 +10,6 @@ import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,24 +34,24 @@ class UserDbStorageTest {
 
     @Test
     void testCreateAndGetUser() {
-        User createdUser = userStorage.createUser(testUser);
+        User createdUser = userStorage.save(testUser);
 
-        Optional<User> retrievedUser = userStorage.getUserById(createdUser.getId());
+        User retrievedUser = userStorage.findById(createdUser.getId());
 
-        assertThat(retrievedUser).isPresent();
-        assertThat(retrievedUser.get().getEmail()).isEqualTo("test@mail.ru");
-        assertThat(retrievedUser.get().getLogin()).isEqualTo("testuser");
-        assertThat(retrievedUser.get().getName()).isEqualTo("Test User");
+        assertThat(retrievedUser).isNotNull();
+        assertThat(retrievedUser.getEmail()).isEqualTo("test@mail.ru");
+        assertThat(retrievedUser.getLogin()).isEqualTo("testuser");
+        assertThat(retrievedUser.getName()).isEqualTo("Test User");
     }
 
     @Test
     void testUpdateUser() {
-        User createdUser = userStorage.createUser(testUser);
+        User createdUser = userStorage.save(testUser);
 
         createdUser.setName("Updated User");
         createdUser.setEmail("updated@mail.ru");
 
-        User updatedUser = userStorage.updateUser(createdUser);
+        User updatedUser = userStorage.update(createdUser);
 
         assertThat(updatedUser.getName()).isEqualTo("Updated User");
         assertThat(updatedUser.getEmail()).isEqualTo("updated@mail.ru");
@@ -60,16 +59,16 @@ class UserDbStorageTest {
 
     @Test
     void testGetAllUsers() {
-        userStorage.createUser(testUser);
+        userStorage.save(testUser);
 
         User anotherUser = new User();
         anotherUser.setEmail("another@mail.ru");
         anotherUser.setLogin("anotheruser");
         anotherUser.setName("Another User");
         anotherUser.setBirthday(LocalDate.of(1995, 1, 1));
-        userStorage.createUser(anotherUser);
+        userStorage.save(anotherUser);
 
-        List<User> users = userStorage.getAllUsers();
+        List<User> users = userStorage.findAll();
 
         assertThat(users).hasSize(2);
         assertThat(users).extracting(User::getLogin)
@@ -78,24 +77,24 @@ class UserDbStorageTest {
 
     @Test
     void testUserExists() {
-        User createdUser = userStorage.createUser(testUser);
+        User createdUser = userStorage.save(testUser);
 
         boolean exists = userStorage.userExists(createdUser.getId());
 
         assertThat(exists).isTrue();
-        assertThat(userStorage.userExists(9999)).isFalse();
+        assertThat(userStorage.userExists(9999L)).isFalse();
     }
 
     @Test
     void testAddAndGetFriends() {
-        User user1 = userStorage.createUser(testUser);
+        User user1 = userStorage.save(testUser);
 
         User user2 = new User();
         user2.setEmail("friend@mail.ru");
         user2.setLogin("friend");
         user2.setName("Friend User");
         user2.setBirthday(LocalDate.of(1992, 1, 1));
-        User createdUser2 = userStorage.createUser(user2);
+        User createdUser2 = userStorage.save(user2);
 
         userStorage.addFriend(user1.getId(), createdUser2.getId());
 

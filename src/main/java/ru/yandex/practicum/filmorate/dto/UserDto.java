@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.PastOrPresent;
 import lombok.Data;
 import ru.yandex.practicum.filmorate.model.User;
 
@@ -10,7 +11,7 @@ import java.time.LocalDate;
 
 @Data
 public class UserDto {
-    private int id;
+    private Long id;
 
     @Email(message = "Электронная почта должна быть корректного формата")
     @NotBlank(message = "Электронная почта не может быть пустой")
@@ -21,6 +22,8 @@ public class UserDto {
     private String login;
 
     private String name;
+
+    @PastOrPresent(message = "Дата рождения не может быть в будущем")
     private LocalDate birthday;
 
     public User toUser() {

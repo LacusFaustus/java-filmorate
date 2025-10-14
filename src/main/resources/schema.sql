@@ -50,15 +50,14 @@ CREATE TABLE IF NOT EXISTS friendships (
     FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-MERGE INTO mpa_ratings (id, name) VALUES (1, 'G');
-MERGE INTO mpa_ratings (id, name) VALUES (2, 'PG');
-MERGE INTO mpa_ratings (id, name) VALUES (3, 'PG-13');
-MERGE INTO mpa_ratings (id, name) VALUES (4, 'R');
-MERGE INTO mpa_ratings (id, name) VALUES (5, 'NC-17');
-
-MERGE INTO genres (id, name) VALUES (1, 'Комедия');
-MERGE INTO genres (id, name) VALUES (2, 'Драма');
-MERGE INTO genres (id, name) VALUES (3, 'Мультфильм');
-MERGE INTO genres (id, name) VALUES (4, 'Триллер');
-MERGE INTO genres (id, name) VALUES (5, 'Документальный');
-MERGE INTO genres (id, name) VALUES (6, 'Боевик');
+-- Индексы для улучшения производительности
+CREATE INDEX IF NOT EXISTS idx_films_mpa_id ON films(mpa_id);
+CREATE INDEX IF NOT EXISTS idx_films_release_date ON films(release_date);
+CREATE INDEX IF NOT EXISTS idx_film_genres_film_id ON film_genres(film_id);
+CREATE INDEX IF NOT EXISTS idx_film_genres_genre_id ON film_genres(genre_id);
+CREATE INDEX IF NOT EXISTS idx_film_likes_film_id ON film_likes(film_id);
+CREATE INDEX IF NOT EXISTS idx_film_likes_user_id ON film_likes(user_id);
+CREATE INDEX IF NOT EXISTS idx_friendships_user_id ON friendships(user_id);
+CREATE INDEX IF NOT EXISTS idx_friendships_friend_id ON friendships(friend_id);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_login ON users(login);

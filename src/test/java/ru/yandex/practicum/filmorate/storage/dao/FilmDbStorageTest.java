@@ -13,7 +13,6 @@ import ru.yandex.practicum.filmorate.model.Mpa;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -50,26 +49,26 @@ class FilmDbStorageTest {
 
     @Test
     void testCreateAndGetFilm() {
-        Film createdFilm = filmStorage.createFilm(testFilm);
+        Film createdFilm = filmStorage.save(testFilm);
 
-        Optional<Film> retrievedFilm = filmStorage.getFilmById(createdFilm.getId());
+        Film retrievedFilm = filmStorage.findById(createdFilm.getId());
 
-        assertThat(retrievedFilm).isPresent();
-        assertThat(retrievedFilm.get().getName()).isEqualTo("Test Film");
-        assertThat(retrievedFilm.get().getDescription()).isEqualTo("Test Description");
-        assertThat(retrievedFilm.get().getMpa().getId()).isEqualTo(1);
-        assertThat(retrievedFilm.get().getMpa().getName()).isEqualTo("G");
+        assertThat(retrievedFilm).isNotNull();
+        assertThat(retrievedFilm.getName()).isEqualTo("Test Film");
+        assertThat(retrievedFilm.getDescription()).isEqualTo("Test Description");
+        assertThat(retrievedFilm.getMpa().getId()).isEqualTo(1);
+        assertThat(retrievedFilm.getMpa().getName()).isEqualTo("G");
     }
 
     @Test
     void testUpdateFilm() {
-        Film createdFilm = filmStorage.createFilm(testFilm);
+        Film createdFilm = filmStorage.save(testFilm);
 
         createdFilm.setName("Updated Film");
         createdFilm.setDescription("Updated Description");
         createdFilm.getMpa().setId(2); // PG
 
-        Film updatedFilm = filmStorage.updateFilm(createdFilm);
+        Film updatedFilm = filmStorage.update(createdFilm);
 
         assertThat(updatedFilm.getName()).isEqualTo("Updated Film");
         assertThat(updatedFilm.getDescription()).isEqualTo("Updated Description");
@@ -78,7 +77,7 @@ class FilmDbStorageTest {
 
     @Test
     void testGetAllFilms() {
-        filmStorage.createFilm(testFilm);
+        filmStorage.save(testFilm);
 
         Film anotherFilm = new Film();
         anotherFilm.setName("Another Film");
@@ -86,9 +85,9 @@ class FilmDbStorageTest {
         anotherFilm.setReleaseDate(LocalDate.of(2010, 1, 1));
         anotherFilm.setDuration(90);
         anotherFilm.setMpa(new Mpa(3, "PG-13"));
-        filmStorage.createFilm(anotherFilm);
+        filmStorage.save(anotherFilm);
 
-        List<Film> films = filmStorage.getAllFilms();
+        List<Film> films = filmStorage.findAll();
 
         assertThat(films).hasSize(2);
         assertThat(films).extracting(Film::getName)
@@ -101,24 +100,24 @@ class FilmDbStorageTest {
         Genre genre2 = new Genre(2, "Драма");
         testFilm.setGenres(Arrays.asList(genre1, genre2));
 
-        Film createdFilm = filmStorage.createFilm(testFilm);
+        Film createdFilm = filmStorage.save(testFilm);
 
-        Optional<Film> retrievedFilm = filmStorage.getFilmById(createdFilm.getId());
+        Film retrievedFilm = filmStorage.findById(createdFilm.getId());
 
-        assertThat(retrievedFilm).isPresent();
-        assertThat(retrievedFilm.get().getGenres()).hasSize(2);
-        assertThat(retrievedFilm.get().getGenres())
+        assertThat(retrievedFilm).isNotNull();
+        assertThat(retrievedFilm.getGenres()).hasSize(2);
+        assertThat(retrievedFilm.getGenres())
                 .extracting(Genre::getId)
                 .containsExactlyInAnyOrder(1, 2);
     }
 
     @Test
     void testFilmExists() {
-        Film createdFilm = filmStorage.createFilm(testFilm);
+        Film createdFilm = filmStorage.save(testFilm);
 
         boolean exists = filmStorage.filmExists(createdFilm.getId());
 
         assertThat(exists).isTrue();
-        assertThat(filmStorage.filmExists(9999)).isFalse();
+        assertThat(filmStorage.filmExists(9999L)).isFalse();
     }
 }

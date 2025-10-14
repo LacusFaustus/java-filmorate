@@ -22,7 +22,7 @@ jobs:
         run: mvn clean compile
 
       - name: Run unit tests
-        run: mvn test
+        run: mvn test -Dspring.profiles.active=test
 
       - name: Run integration tests
         run: mvn verify -Dspring.profiles.active=test

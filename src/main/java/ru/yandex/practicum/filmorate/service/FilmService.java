@@ -1,10 +1,8 @@
 package ru.yandex.practicum.filmorate.service;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
@@ -12,54 +10,67 @@ import ru.yandex.practicum.filmorate.storage.UserStorage;
 import java.time.LocalDate;
 import java.util.List;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class FilmService {
-    private static final LocalDate MIN_RELEASE_DATE = LocalDate.of(1895, 12, 28);
+    private static final LocalDate CINEMA_BIRTHDAY = LocalDate.of(1895, 12, 28);
 
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
 
+    @Autowired
+    public FilmService(FilmStorage filmStorage, UserStorage userStorage) {
+        this.filmStorage = filmStorage;
+        this.userStorage = userStorage;
+    }
+
     public List<Film> getAllFilms() {
-        return filmStorage.getAllFilms();
+        return filmStorage.findAll();
+    }
+
+    // Добавляем метод для пагинации
+    public List<Film> getAllFilms(int page, int size) {
+        List<Film> allFilms = filmStorage.findAll();
+        int fromIndex = (page - 1) * size;
+        if (fromIndex >= allFilms.size()) {
+            return List.of();
+        }
+        int toIndex = Math.min(fromIndex + size, allFilms.size());
+        return allFilms.subList(fromIndex, toIndex);
+    }
+
+    public Film getFilmById(Long id) {
+        Film film = filmStorage.findById(id);
+        if (film == null) {
+            throw new NotFoundException("Фильм с id=" + id + " не найден");
+        }
+        return film;
     }
 
     public Film createFilm(Film film) {
         validateFilm(film);
-        return filmStorage.createFilm(film);
+        return filmStorage.save(film);
     }
 
     public Film updateFilm(Film film) {
-        if (!filmStorage.filmExists(film.getId())) {
+        validateFilm(film);
+        Film updatedFilm = filmStorage.update(film);
+        if (updatedFilm == null) {
             throw new NotFoundException("Фильм с id=" + film.getId() + " не найден");
         }
-        validateFilm(film);
-        return filmStorage.updateFilm(film);
+        return updatedFilm;
     }
 
-    public Film getFilmById(int id) {
-        return filmStorage.getFilmById(id)
-                .orElseThrow(() -> new NotFoundException("Фильм с id=" + id + " не найден"));
+    public void deleteFilm(Long id) {
+        filmStorage.delete(id);
     }
 
-    public void addLike(int filmId, int userId) {
-        if (!filmStorage.filmExists(filmId)) {
-            throw new NotFoundException("Фильм с id=" + filmId + " не найден");
-        }
-        if (!userStorage.userExists(userId)) {
-            throw new NotFoundException("Пользователь с id=" + userId + " не найден");
-        }
+    public void addLike(Long filmId, Long userId) {
+        validateFilmAndUser(filmId, userId);
         filmStorage.addLike(filmId, userId);
     }
 
-    public void removeLike(int filmId, int userId) {
-        if (!filmStorage.filmExists(filmId)) {
-            throw new NotFoundException("Фильм с id=" + filmId + " не найден");
-        }
-        if (!userStorage.userExists(userId)) {
-            throw new NotFoundException("Пользователь с id=" + userId + " не найден");
-        }
+    public void removeLike(Long filmId, Long userId) {
+        validateFilmAndUser(filmId, userId);
         filmStorage.removeLike(filmId, userId);
     }
 
@@ -67,12 +78,29 @@ public class FilmService {
         return filmStorage.getPopularFilms(count);
     }
 
-    private void validateFilm(Film film) {
-        if (film.getReleaseDate() == null || film.getReleaseDate().isBefore(MIN_RELEASE_DATE)) {
-            throw new ValidationException("Дата релиза не может быть раньше " + MIN_RELEASE_DATE);
+    // Добавляем перегруженный метод для пагинации
+    public List<Film> getPopularFilms(int count, int page) {
+        List<Film> popularFilms = filmStorage.getPopularFilms(count * page);
+        int fromIndex = (page - 1) * count;
+        if (fromIndex >= popularFilms.size()) {
+            return List.of();
         }
-        if (film.getMpa() == null) {
-            throw new ValidationException("Рейтинг MPA не может быть пустым");
+        int toIndex = Math.min(fromIndex + count, popularFilms.size());
+        return popularFilms.subList(fromIndex, toIndex);
+    }
+
+    private void validateFilm(Film film) {
+        if (film.getReleaseDate().isBefore(CINEMA_BIRTHDAY)) {
+            throw new IllegalArgumentException("Дата релиза не может быть раньше 28 декабря 1895 года");
+        }
+    }
+
+    private void validateFilmAndUser(Long filmId, Long userId) {
+        if (filmStorage.findById(filmId) == null) {
+            throw new NotFoundException("Фильм с id=" + filmId + " не найден");
+        }
+        if (userStorage.findById(userId) == null) {
+            throw new NotFoundException("Пользователь с id=" + userId + " не найден");
         }
     }
 }
