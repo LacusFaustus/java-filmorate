@@ -20,8 +20,8 @@ public class FilmDto {
     private LocalDate releaseDate;
     private Integer duration;
     private MpaDto mpa;
-    private List<GenreDto> genres;
-    private List<Long> likes;
+    private List<GenreDto> genres = new ArrayList<>();
+    private List<Long> likes = new ArrayList<>();
 
     public static FilmDto fromFilm(Film film) {
         FilmDto dto = new FilmDto();
@@ -52,9 +52,15 @@ public class FilmDto {
         Film film = new Film();
         film.setId(this.id);
         film.setName(this.name);
-        film.setDescription(this.description != null && this.description.length() > MAX_DESCRIPTION_LENGTH
-                ? this.description.substring(0, MAX_DESCRIPTION_LENGTH)
-                : this.description);
+
+        if (this.description != null) {
+            film.setDescription(this.description.length() > MAX_DESCRIPTION_LENGTH
+                    ? this.description.substring(0, MAX_DESCRIPTION_LENGTH)
+                    : this.description);
+        } else {
+            film.setDescription(null);
+        }
+
         film.setReleaseDate(this.releaseDate);
         film.setDuration(this.duration);
 

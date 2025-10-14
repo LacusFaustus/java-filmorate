@@ -31,7 +31,14 @@ public class UserDto {
         user.setId(this.id);
         user.setEmail(this.email);
         user.setLogin(this.login);
-        user.setName(this.name);
+
+        // Если имя пустое, используем логин
+        if (this.name == null || this.name.isBlank()) {
+            user.setName(this.login);
+        } else {
+            user.setName(this.name);
+        }
+
         user.setBirthday(this.birthday);
         return user;
     }

@@ -45,7 +45,7 @@ class FilmControllerIntegrationTest {
         filmDto.setDuration(120);
 
         MpaDto mpaDto = new MpaDto();
-        mpaDto.setId(1);
+        mpaDto.setId(1); // Используем существующий MPA ID
         mpaDto.setName("G");
         filmDto.setMpa(mpaDto);
 
@@ -84,5 +84,20 @@ class FilmControllerIntegrationTest {
         assertNotNull(response.getBody());
         assertEquals(userDto.getEmail(), response.getBody().getEmail());
         assertTrue(response.getBody().getId() > 0);
+    }
+
+    @Test
+    void updateNonExistentUserShouldReturnNotFound() {
+        UserDto userDto = createValidUserDto();
+        userDto.setId(9999L);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                "/users",
+                HttpMethod.PUT,
+                new HttpEntity<>(userDto),
+                String.class
+        );
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
 }

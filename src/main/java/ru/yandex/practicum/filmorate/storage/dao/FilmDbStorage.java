@@ -46,6 +46,15 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     @Transactional
     public Film save(Film film) {
+        // Проверяем существование MPA
+        if (film.getMpa() != null && film.getMpa().getId() != null) {
+            String checkMpaSql = "SELECT COUNT(*) FROM mpa_ratings WHERE id = ?";
+            Integer mpaCount = jdbcTemplate.queryForObject(checkMpaSql, Integer.class, film.getMpa().getId());
+            if (mpaCount == null || mpaCount == 0) {
+                throw new IllegalArgumentException("MPA rating with id=" + film.getMpa().getId() + " not found");
+            }
+        }
+
         String sql = "INSERT INTO films (name, description, release_date, duration, mpa_id) VALUES (?, ?, ?, ?, ?)";
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -68,6 +77,21 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     @Transactional
     public Film update(Film film) {
+        // Проверяем существование фильма
+        Film existingFilm = findById(film.getId());
+        if (existingFilm == null) {
+            return null;
+        }
+
+        // Проверяем существование MPA
+        if (film.getMpa() != null && film.getMpa().getId() != null) {
+            String checkMpaSql = "SELECT COUNT(*) FROM mpa_ratings WHERE id = ?";
+            Integer mpaCount = jdbcTemplate.queryForObject(checkMpaSql, Integer.class, film.getMpa().getId());
+            if (mpaCount == null || mpaCount == 0) {
+                throw new IllegalArgumentException("MPA rating with id=" + film.getMpa().getId() + " not found");
+            }
+        }
+
         String sql = "UPDATE films SET name = ?, description = ?, release_date = ?, duration = ?, mpa_id = ? WHERE id = ?";
 
         int updated = jdbcTemplate.update(sql,

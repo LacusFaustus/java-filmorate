@@ -23,14 +23,22 @@ public class UserDbStorage implements UserStorage {
     @Override
     public List<User> findAll() {
         String sql = "SELECT * FROM users";
-        return jdbcTemplate.query(sql, this::mapRowToUser);
+        List<User> users = jdbcTemplate.query(sql, this::mapRowToUser);
+        users.forEach(this::loadUserFriends);
+        return users;
     }
 
     @Override
     public User findById(Long id) {
         String sql = "SELECT * FROM users WHERE id = ?";
         List<User> users = jdbcTemplate.query(sql, this::mapRowToUser, id);
-        return users.isEmpty() ? null : users.get(0);
+        if (users.isEmpty()) {
+            return null;
+        }
+
+        User user = users.get(0);
+        loadUserFriends(user);
+        return user;
     }
 
     @Override
@@ -56,6 +64,12 @@ public class UserDbStorage implements UserStorage {
     @Override
     @Transactional
     public User update(User user) {
+        // Проверяем существование пользователя
+        User existingUser = findById(user.getId());
+        if (existingUser == null) {
+            return null;
+        }
+
         String sql = "UPDATE users SET email = ?, login = ?, name = ?, birthday = ? WHERE id = ?";
 
         int updated = jdbcTemplate.update(sql,
@@ -66,6 +80,12 @@ public class UserDbStorage implements UserStorage {
                 user.getId());
 
         return updated > 0 ? user : null;
+    }
+
+    private void loadUserFriends(User user) {
+        String sql = "SELECT friend_id FROM friendships WHERE user_id = ?";
+        List<Long> friendIds = jdbcTemplate.queryForList(sql, Long.class, user.getId());
+        user.getFriends().addAll(friendIds);
     }
 
     @Override

@@ -27,17 +27,6 @@ public class FilmService {
         return filmStorage.findAll();
     }
 
-    // Добавляем метод для пагинации
-    public List<Film> getAllFilms(int page, int size) {
-        List<Film> allFilms = filmStorage.findAll();
-        int fromIndex = (page - 1) * size;
-        if (fromIndex >= allFilms.size()) {
-            return List.of();
-        }
-        int toIndex = Math.min(fromIndex + size, allFilms.size());
-        return allFilms.subList(fromIndex, toIndex);
-    }
-
     public Film getFilmById(Long id) {
         Film film = filmStorage.findById(id);
         if (film == null) {
@@ -48,11 +37,23 @@ public class FilmService {
 
     public Film createFilm(Film film) {
         validateFilm(film);
+
+        // Убедимся, что MPA установлен
+        if (film.getMpa() == null) {
+            throw new IllegalArgumentException("MPA rating is required");
+        }
+
         return filmStorage.save(film);
     }
 
     public Film updateFilm(Film film) {
         validateFilm(film);
+
+        // Убедимся, что MPA установлен
+        if (film.getMpa() == null) {
+            throw new IllegalArgumentException("MPA rating is required");
+        }
+
         Film updatedFilm = filmStorage.update(film);
         if (updatedFilm == null) {
             throw new NotFoundException("Фильм с id=" + film.getId() + " не найден");
@@ -78,7 +79,6 @@ public class FilmService {
         return filmStorage.getPopularFilms(count);
     }
 
-    // Добавляем перегруженный метод для пагинации
     public List<Film> getPopularFilms(int count, int page) {
         List<Film> popularFilms = filmStorage.getPopularFilms(count * page);
         int fromIndex = (page - 1) * count;
