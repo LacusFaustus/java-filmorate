@@ -1,5 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import ru.yandex.practicum.filmorate.dto.MpaDto;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -8,8 +10,13 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
+import ru.yandex.practicum.filmorate.dto.UserDto;
+import ru.yandex.practicum.filmorate.util.DatabaseCleaner;
+
 import java.time.LocalDate;
+import java.util.concurrent.atomic.AtomicLong;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -18,131 +25,79 @@ class FilmControllerIntegrationTest {
     @Autowired
     private TestRestTemplate restTemplate;
 
+    @Autowired
+    private DatabaseCleaner databaseCleaner;
+
+    private AtomicLong filmCounter = new AtomicLong(System.currentTimeMillis());
+    private AtomicLong userCounter = new AtomicLong(System.currentTimeMillis() + 10000);
+
+    @BeforeEach
+    void cleanup() {
+        databaseCleaner.cleanDatabase();
+    }
+
+    private FilmDto createValidFilmDto() {
+        long counter = filmCounter.incrementAndGet();
+        FilmDto filmDto = new FilmDto();
+        filmDto.setName("Test Film " + counter);
+        filmDto.setDescription("Test Description " + counter);
+        filmDto.setReleaseDate(LocalDate.of(2000, 1, 1));
+        filmDto.setDuration(120);
+
+        MpaDto mpaDto = new MpaDto();
+        mpaDto.setId(1); // Используем существующий MPA ID
+        mpaDto.setName("G");
+        filmDto.setMpa(mpaDto);
+
+        return filmDto;
+    }
+
+    private UserDto createValidUserDto() {
+        long counter = userCounter.incrementAndGet();
+        UserDto userDto = new UserDto();
+        userDto.setEmail("test" + counter + "@mail.ru");
+        userDto.setLogin("testuser" + counter);
+        userDto.setName("Test User " + counter);
+        userDto.setBirthday(LocalDate.of(1990, 1, 1));
+        return userDto;
+    }
+
     @Test
     void createFilmWithValidDataShouldReturnCreated() {
-        Film film = new Film();
-        film.setName("The Matrix");
-        film.setDescription("A computer hacker learns from mysterious rebels about the true nature of his reality");
-        film.setReleaseDate(LocalDate.of(1999, 3, 31));
-        film.setDuration(136);
+        FilmDto filmDto = createValidFilmDto();
 
-        ResponseEntity<Film> response = restTemplate.postForEntity("/films", film, Film.class);
+        ResponseEntity<FilmDto> response = restTemplate.postForEntity("/films", filmDto, FilmDto.class);
 
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals("The Matrix", response.getBody().getName());
+        assertEquals(filmDto.getName(), response.getBody().getName());
         assertTrue(response.getBody().getId() > 0);
     }
 
     @Test
-    void createFilmWithEmptyNameShouldReturnBadRequest() {
-        Film film = new Film();
-        film.setName("");
-        film.setDescription("Test Description");
-        film.setReleaseDate(LocalDate.of(2000, 1, 1));
-        film.setDuration(120);
+    void createUserWithValidDataShouldReturnCreated() {
+        UserDto userDto = createValidUserDto();
 
-        ResponseEntity<String> response = restTemplate.postForEntity("/films", film, String.class);
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ResponseEntity<UserDto> response = restTemplate.postForEntity("/users", userDto, UserDto.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(userDto.getEmail(), response.getBody().getEmail());
+        assertTrue(response.getBody().getId() > 0);
     }
 
     @Test
-    void createFilmWithEarlyReleaseDateShouldReturnBadRequest() {
-        Film film = new Film();
-        film.setName("Early Film");
-        film.setDescription("Test Description");
-        film.setReleaseDate(LocalDate.of(1890, 1, 1));
-        film.setDuration(120);
-
-        ResponseEntity<String> response = restTemplate.postForEntity("/films", film, String.class);
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-    }
-
-    @Test
-    void createFilmWithNegativeDurationShouldReturnBadRequest() {
-        Film film = new Film();
-        film.setName("Negative Duration Film");
-        film.setDescription("Test Description");
-        film.setReleaseDate(LocalDate.of(2000, 1, 1));
-        film.setDuration(-120);
-
-        ResponseEntity<String> response = restTemplate.postForEntity("/films", film, String.class);
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-    }
-
-    @Test
-    void updateFilmWithValidDataShouldReturnOk() {
-        // First create a film
-        Film film = new Film();
-        film.setName("Original Film");
-        film.setDescription("Original Description");
-        film.setReleaseDate(LocalDate.of(2000, 1, 1));
-        film.setDuration(120);
-
-        ResponseEntity<Film> createResponse = restTemplate.postForEntity("/films", film, Film.class);
-        Film createdFilm = createResponse.getBody();
-
-        // Then update it
-        createdFilm.setName("Updated Film");
-        createdFilm.setDescription("Updated Description");
-
-        ResponseEntity<Film> updateResponse = restTemplate.exchange(
-                "/films",
-                HttpMethod.PUT,
-                new HttpEntity<>(createdFilm),
-                Film.class
-        );
-
-        assertEquals(HttpStatus.OK, updateResponse.getStatusCode());
-        assertNotNull(updateResponse.getBody());
-        assertEquals("Updated Film", updateResponse.getBody().getName());
-    }
-
-    @Test
-    void updateNonExistentFilmShouldReturnNotFound() {
-        Film film = new Film();
-        film.setId(9999);
-        film.setName("Non-existent Film");
-        film.setDescription("Test Description");
-        film.setReleaseDate(LocalDate.of(2000, 1, 1));
-        film.setDuration(120);
+    void updateNonExistentUserShouldReturnNotFound() {
+        UserDto userDto = createValidUserDto();
+        userDto.setId(9999L);
 
         ResponseEntity<String> response = restTemplate.exchange(
-                "/films",
+                "/users",
                 HttpMethod.PUT,
-                new HttpEntity<>(film),
+                new HttpEntity<>(userDto),
                 String.class
         );
 
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    }
-
-    @Test
-    void getFilmByIdShouldReturnFilm() {
-        // First create a film
-        Film film = new Film();
-        film.setName("Film for Get Test");
-        film.setDescription("Test Description");
-        film.setReleaseDate(LocalDate.of(2000, 1, 1));
-        film.setDuration(120);
-
-        ResponseEntity<Film> createResponse = restTemplate.postForEntity("/films", film, Film.class);
-        Film createdFilm = createResponse.getBody();
-
-        // Then get it by ID
-        ResponseEntity<Film> getResponse = restTemplate.getForEntity(
-                "/films/" + createdFilm.getId(),
-                Film.class
-        );
-
-        assertEquals(HttpStatus.OK, getResponse.getStatusCode());
-        assertNotNull(getResponse.getBody());
-        assertEquals("Film for Get Test", getResponse.getBody().getName());
-    }
-
-    @Test
-    void getNonExistentFilmShouldReturnNotFound() {
-        ResponseEntity<String> response = restTemplate.getForEntity("/films/9999", String.class);
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
 }

@@ -1,0 +1,120 @@
+
+
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│     users       │    │     films       │    │   mpa_ratings   │
+├─────────────────┤    ├─────────────────┤    ├─────────────────┤
+│ id (PK)         │    │ id (PK)         │    │ id (PK)         │
+│ email           │    │ name            │    │ name            │
+│ login           │    │ description     │    └─────────────────┘
+│ name            │    │ release_date    │             │
+│ birthday        │    │ duration        │             │
+└─────────────────┘    │ mpa_id (FK)     │◄────────────┘
+         │             └─────────────────┘
+         │                      │
+         │                      │
+         │             ┌─────────────────┐
+         │             │   film_genres   │
+         │             ├─────────────────┤
+         │             │ film_id (FK)    │
+         │             │ genre_id (FK)   │
+         │             └─────────────────┘
+         │                      │
+         │                      │
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   friendships   │    │   film_likes    │    │     genres      │
+├─────────────────┤    ├─────────────────┤    ├─────────────────┤
+│ user_id (FK)    │    │ film_id (FK)    │    │ id (PK)         │
+│ friend_id (FK)  │    │ user_id (FK)    │    │ name            │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+
+
+
+java-filmorate/
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── ru/
+│   │   │       └── yandex/
+│   │   │           └── practicum/
+│   │   │               └── filmorate/
+│   │   │                   ├── FilmorateApplication.java
+│   │   │                   ├── config/
+│   │   │                   │   └── DatabaseConfig.java
+│   │   │                   ├── controller/
+│   │   │                   │   ├── ErrorHandler.java
+│   │   │                   │   ├── FilmController.java
+│   │   │                   │   ├── GenreController.java
+│   │   │                   │   ├── MpaController.java
+│   │   │                   │   └── UserController.java
+│   │   │                   ├── dto/
+│   │   │                   │   ├── FilmDto.java
+│   │   │                   │   ├── GenreDto.java
+│   │   │                   │   ├── MpaDto.java
+│   │   │                   │   └── UserDto.java
+│   │   │                   ├── exception/
+│   │   │                   │   ├── AlreadyExistsException.java
+│   │   │                   │   ├── NotFoundException.java
+│   │   │                   │   └── ValidationException.java
+│   │   │                   ├── model/
+│   │   │                   │   ├── Film.java
+│   │   │                   │   ├── Genre.java
+│   │   │                   │   ├── Mpa.java
+│   │   │                   │   └── User.java
+│   │   │                   ├── service/
+│   │   │                   │   ├── FilmService.java
+│   │   │                   │   ├── GenreService.java
+│   │   │                   │   ├── MpaService.java
+│   │   │                   │   └── UserService.java
+│   │   │                   ├── storage/
+│   │   │                   │   ├── FilmStorage.java
+│   │   │                   │   ├── GenreStorage.java
+│   │   │                   │   ├── InMemoryFilmStorage.java
+│   │   │                   │   ├── InMemoryUserStorage.java
+│   │   │                   │   ├── MpaStorage.java
+│   │   │                   │   └── UserStorage.java
+│   │   │                   ├── storage/dao/
+│   │   │                   │   ├── FilmDbStorage.java
+│   │   │                   │   ├── GenreDbStorage.java
+│   │   │                   │   ├── MpaDbStorage.java
+│   │   │                   │   └── UserDbStorage.java
+│   │   │                   └── util/
+│   │   │                       └── DatabaseCleaner.java
+│   │   └── resources/
+│   │       ├── application.properties
+│   │       ├── application-test.properties
+│   │       ├── data.sql
+│   │       └── schema.sql
+│   └── test/
+│       └── java/
+│           └── ru/
+│               └── yandex/
+│                   └── practicum/
+│                       └── filmorate/
+│                           ├── FilmorateApplicationTests.java
+│                           ├── controller/
+│                           │   ├── FilmControllerIntegrationTest.java
+│                           │   ├── FilmControllerTest.java
+│                           │   ├── UserControllerIntegrationTest.java
+│                           │   └── UserControllerTest.java
+│                           ├── service/
+│                           │   ├── FilmServiceTest.java
+│                           │   └── UserServiceTest.java
+│                           └── storage/
+│                               ├── dao/
+│                               │   ├── FilmDbStorageTest.java
+│                               │   └── UserDbStorageTest.java
+│                               ├── InMemoryFilmStorageTest.java
+│                               └── InMemoryUserStorageTest.java
+├── db/
+│   └── filmorate.mv.db
+├── checkstyle.xml
+├── suppressions.xml
+├── lombok.config
+└── pom.xml
+
+
+
+
+
+
+

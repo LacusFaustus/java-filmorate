@@ -10,7 +10,7 @@ import java.util.Set;
 
 @Data
 public class User {
-    private int id;
+    private Long id;
 
     @Email(message = "Электронная почта должна быть корректного формата")
     @NotBlank(message = "Электронная почта не может быть пустой")
@@ -22,23 +22,13 @@ public class User {
 
     private String name;
     private LocalDate birthday;
+    private Set<Long> friends = new HashSet<>();
 
-    private Set<Integer> friends = new HashSet<>();
-
-    public void addFriend(int friendId) {
+    public void addFriend(Long friendId) {
         friends.add(friendId);
     }
 
-    public void removeFriend(int friendId) {
+    public void removeFriend(Long friendId) {
         friends.remove(friendId);
-    }
-
-    public Set<Integer> getFriends() {
-        return new HashSet<>(friends);
-    }
-
-    // Добавляем сеттер для friends
-    public void setFriends(Set<Integer> friends) {
-        this.friends = new HashSet<>(friends);
     }
 }

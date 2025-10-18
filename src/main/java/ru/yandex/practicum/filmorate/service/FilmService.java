@@ -1,97 +1,106 @@
 package ru.yandex.practicum.filmorate.service;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import java.time.LocalDate;
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
+import ru.yandex.practicum.filmorate.storage.UserStorage;
 
-@Slf4j
+import java.time.LocalDate;
+import java.util.List;
+
 @Service
 public class FilmService {
-    private static final LocalDate MIN_RELEASE_DATE = LocalDate.of(1895, 12, 28);
+    private static final LocalDate CINEMA_BIRTHDAY = LocalDate.of(1895, 12, 28);
 
     private final FilmStorage filmStorage;
+    private final UserStorage userStorage;
 
     @Autowired
-    public FilmService(FilmStorage filmStorage) {
+    public FilmService(FilmStorage filmStorage, UserStorage userStorage) {
         this.filmStorage = filmStorage;
+        this.userStorage = userStorage;
     }
 
     public List<Film> getAllFilms() {
-        log.debug("Получение всех фильмов из хранилища");
-        return filmStorage.getAllFilms();
+        return filmStorage.findAll();
+    }
+
+    public Film getFilmById(Long id) {
+        Film film = filmStorage.findById(id);
+        if (film == null) {
+            throw new NotFoundException("Фильм с id=" + id + " не найден");
+        }
+        return film;
     }
 
     public Film createFilm(Film film) {
-        log.debug("Создание нового фильма: {}", film);
         validateFilm(film);
-        Film createdFilm = filmStorage.createFilm(film);
-        log.info("Создан новый фильм с ID: {}", createdFilm.getId());
-        return createdFilm;
+
+        // Убедимся, что MPA установлен
+        if (film.getMpa() == null) {
+            throw new IllegalArgumentException("MPA rating is required");
+        }
+
+        return filmStorage.save(film);
     }
 
     public Film updateFilm(Film film) {
-        log.debug("Обновление фильма: {}", film);
+        validateFilm(film);
 
-        if (!filmStorage.filmExists(film.getId())) {
-            log.warn("Попытка обновления несуществующего фильма с ID: {}", film.getId());
-            throw new NotFoundException("Фильм с id=" + film.getId() + " не найден");
+        // Убедимся, что MPA установлен
+        if (film.getMpa() == null) {
+            throw new IllegalArgumentException("MPA rating is required");
         }
 
-        validateFilm(film);
-        Film updatedFilm = filmStorage.updateFilm(film);
-        log.info("Обновлен фильм с ID: {}", updatedFilm.getId());
+        Film updatedFilm = filmStorage.update(film);
+        if (updatedFilm == null) {
+            throw new NotFoundException("Фильм с id=" + film.getId() + " не найден");
+        }
         return updatedFilm;
     }
 
-    public Film getFilmById(int id) {
-        log.debug("Получение фильма по ID: {}", id);
-        return filmStorage.getFilmById(id)
-                .orElseThrow(() -> {
-                    log.warn("Фильм с ID {} не найден", id);
-                    return new NotFoundException("Фильм с id=" + id + " не найден");
-                });
+    public void deleteFilm(Long id) {
+        filmStorage.delete(id);
     }
 
-    public void addLike(int filmId, int userId) {
-        log.debug("Добавление лайка фильму {} от пользователя {}", filmId, userId);
-        Film film = getFilmById(filmId);
-        film.addLike(userId);
-        filmStorage.updateFilm(film);
-        log.info("Добавлен лайк фильму {} от пользователя {}", filmId, userId);
+    public void addLike(Long filmId, Long userId) {
+        validateFilmAndUser(filmId, userId);
+        filmStorage.addLike(filmId, userId);
     }
 
-    public void removeLike(int filmId, int userId) {
-        log.debug("Удаление лайка у фильма {} от пользователя {}", filmId, userId);
-        Film film = getFilmById(filmId);
-        film.removeLike(userId);
-        filmStorage.updateFilm(film);
-        log.info("Удален лайк у фильма {} от пользователя {}", filmId, userId);
+    public void removeLike(Long filmId, Long userId) {
+        validateFilmAndUser(filmId, userId);
+        filmStorage.removeLike(filmId, userId);
     }
 
     public List<Film> getPopularFilms(int count) {
-        log.debug("Получение {} популярных фильмов", count);
-        return filmStorage.getAllFilms().stream()
-                .sorted(Comparator.comparingInt(Film::getLikesCount).reversed())
-                .limit(count)
-                .collect(Collectors.toList());
+        return filmStorage.getPopularFilms(count);
+    }
+
+    public List<Film> getPopularFilms(int count, int page) {
+        List<Film> popularFilms = filmStorage.getPopularFilms(count * page);
+        int fromIndex = (page - 1) * count;
+        if (fromIndex >= popularFilms.size()) {
+            return List.of();
+        }
+        int toIndex = Math.min(fromIndex + count, popularFilms.size());
+        return popularFilms.subList(fromIndex, toIndex);
     }
 
     private void validateFilm(Film film) {
-        log.debug("Валидация фильма: {}", film);
-
-        if (film.getReleaseDate() == null || film.getReleaseDate().isBefore(MIN_RELEASE_DATE)) {
-            log.warn("Попытка создания/обновления фильма с неверной датой релиза: {}", film.getReleaseDate());
-            throw new ValidationException("Дата релиза не может быть раньше " + MIN_RELEASE_DATE);
+        if (film.getReleaseDate().isBefore(CINEMA_BIRTHDAY)) {
+            throw new IllegalArgumentException("Дата релиза не может быть раньше 28 декабря 1895 года");
         }
+    }
 
-        log.debug("Валидация фильма прошла успешно");
+    private void validateFilmAndUser(Long filmId, Long userId) {
+        if (filmStorage.findById(filmId) == null) {
+            throw new NotFoundException("Фильм с id=" + filmId + " не найден");
+        }
+        if (userStorage.findById(userId) == null) {
+            throw new NotFoundException("Пользователь с id=" + userId + " не найден");
+        }
     }
 }
